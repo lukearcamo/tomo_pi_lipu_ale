@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>tomo pi lipu ale</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link href='https://fonts.googleapis.com/css2?family=Major+Mono+Display&family=Questrial&display=swap' rel='stylesheet'>
+    </head>
+    <style>
+        body {
+            margin: 0;
+            background-color: #eee9dd;
+            background-image: linear-gradient(to bottom, #eee9dd, #a69e7c);
+        }
+        .header {
+            text-align: center;
+            font-family: Questrial;
+            color: #555;
+        }
+        textarea {
+            display: block;
+            box-sizing: border-box;
+            width: 100%;
+            height: 150px;
+            margin: 10px 0;
+            padding: 5px;
+
+            font: 20px Questrial;
+            color: #555;
+            
+            border: none;
+            border-radius: 6px;
+            outline-color: #555;
+            resize: none;
+        }
+        .inputSection {
+            margin: 20px 20%;
+            font: 20px Questrial;
+            color: #555;
+        }
+        button {
+            width: 100%;
+            margin: 5px 0;
+            padding: 10px;
+
+            border: none;
+            border-radius: 6px;
+            outline-color: #555;
+
+            background-color: #636984;
+            font: 16px Questrial;
+            color: #fff;
+            transition: background-color 0.2s;
+        }
+        button:hover { background-color: #8f98bf; }
+        button:active { transform: scale(1.1, 1.1); }
+    </style>
+    <body>
+        <div class="header" style="margin: 3% 10%; font-size: max(7vw, 80px); font-family: 'Major Mono Display';">
+            toMo pi lipu Ale
+        </div>
+        <div class="header" style="margin: 0 10%; font-size: 30px; font-family: 'Major Mono Display';">
+            "the libRAry of bAbel"<br>
+            kepeken toki ponA
+        </div>
+        <div class="header" style="font-size: 2.5vh; margin: 0 10%;">
+            <br><br>
+            kama pona! My name is Luke and I made this website to practice my Toki Pona and coding skills.
+            <br><br>
+            <i><a href="https://en.wikipedia.org/wiki/The_Library_of_Babel">The Library of Babel</a></i> is a short story by Jorge Luis Borges,
+            in which every possible combination of the letters of the alphabet exists in a vast library.
+            I wanted to emulate a smaller version of it, but instead of it being filled predominantly with nonsense,
+            I used <a href="https://en.wikipedia.org/wiki/Toki_Pona">Toki Pona</a>, the minimalist constructed language created by Sonja Lang,
+            to allow more opportunities to find meaning, though the text is still mostly ungrammatical.
+            <br><br>
+            Every permutation of 16 or less Toki Pona words can be found inside this library at several locations.
+            You can search for text or retrieve the page at a given address of 32 hexadecimal characters,
+            allowing for over 1.2 × 10<sup>24</sup> Toki Pona sentences.
+            If you keep the address of the page, you can revisit the exact same page any time.
+            <br><br>
+            If you have any suggestions/improvements for the Toki Pona text or anything else here, pls lmk :)
+            <br><br><br>
+        </div>
+        <div class="inputSection">
+            toki:
+            <textarea id="searchBox" placeholder="ni la sina o kepeken e nimi pi toki pona..." oninput="verifySearch();" autocomplete="off" spellcheck="false"></textarea>
+
+            <button onclick="search(true);">o lukin e toki ale</button>
+            <button onclick="search(false);">o lukin e toki kipisi</button>
+        </div>
+        <div class="inputSection">
+            lon:
+            <textarea id="addressBox"placeholder="ni la sina o kepeken e nanpa e sitelen 'a' tawa 'f'..." oninput="verifyAddress();" autocomplete="off" spellcheck="false"></textarea>
+            <button onclick="retrieve();">o kama e lipu</button>
+            <button onclick="randomAddress();">o kama e lipu lon nasa</button>
+        </div>
+        <div class="inputSection">
+            lipu:
+            <textarea id="outputBox" placeholder="lipu anu pakala li lon la ona li ni..." readonly></textarea>
+        </div>
+        <br><br><br>
+        <script>
+            const words = ["","a","akesi","ala","alasa","ale","anpa","ante","anu","awen","e","en","esun","ijo","ike","ilo","insa","jaki","jan","jelo","jo","kala","kalama","kama","kasi","ken","kepeken","kili","kin","kipisi","kiwen","ko","kon","kule","kulupu","kute","la","lape","laso","lawa","len","lete","li","lili","linja","lipu","loje","lon","luka","lukin","lupa","ma","mama","mani","meli","mi","mije","moku","moli","monsi","monsuta","mu","mun","musi","mute","namako","nanpa","nasa","nasin","nena","ni","nimi","noka","o","oko","olin","ona","open","pakala","pali","palisa","pan","pana","pi","pilin","pimeja","pini","pipi","poka","poki","pona","pu","sama","seli","selo","seme","sewi","sijelo","sike","sin","sina","sinpin","sitelen","sona","soweli","suli","suno","supa","suwi","tan","taso","tawa","telo","tenpo","toki","tomo","tu","unpa","uta","utala","walo","wan","waso","wawa","weka","wile"];
+            
+            // Important Constants
+            const addressLength = 32;
+            const addressCharset = "0123456789abcdef";
+            const max2Digit = addressCharset.length * addressCharset.length;
+            var variants = 0;
+
+            // DOM Element Stuff
+            const searchBox = document.getElementById("searchBox");
+            const addressBox = document.getElementById("addressBox");
+            const outputBox = document.getElementById("outputBox");
+            const searchRegex = new RegExp("[^aeioumnptkswlj ]", "g");
+            const addressRegex = new RegExp("[^" + addressCharset + "]", "g");
+            function verifySearch() {
+                searchBox.value = searchBox.value.toLowerCase().replaceAll(searchRegex, "");
+            }
+            function verifyAddress() {
+                addressBox.value = addressBox.value.substr(0, addressLength);
+                addressBox.value = addressBox.value.toLowerCase().replaceAll(addressRegex, "");
+            }
+            function search(exact) {
+                if (searchBox.value == "") {
+                    outputBox.value = "pakala: poki toki li jo ala e nimi!";
+                    return;
+                }
+                var text = encode(searchBox.value);
+                if (!text) return;
+
+                var startPadding = Math.floor(Math.random() * addressLength * 0.5) * 2;
+                if (exact) {
+                    text = text.padStart(startPadding, "00");
+                    text = text.padEnd(addressLength, "00");
+                }
+                else {
+                    while (text.length < startPadding) {
+                        text = addressCharset[Math.floor(Math.random() * addressCharset.length)] + text;
+                    }
+                    while (text.length < addressLength) {
+                        text += addressCharset[Math.floor(Math.random() * addressCharset.length)];
+                    }
+                }
+                addressBox.value = encrypt(text);
+                outputBox.value = decode(decrypt(addressBox.value));
+                outputBox.focus();
+                var found = outputBox.value.indexOf(searchBox.value);
+                outputBox.setSelectionRange(found, found + searchBox.value.length);
+            }
+            function retrieve() {
+                addressBox.value = addressBox.value.padStart(addressLength, "00");
+                outputBox.value = decode(decrypt(addressBox.value));
+            }
+            function randomAddress() {
+                addressBox.value = "";
+                while (addressBox.value.length < addressLength) {
+                    addressBox.value += addressCharset[Math.floor(Math.random() * addressCharset.length)];
+                }
+                outputBox.value = decode(decrypt(addressBox.value));
+            }
+
+            // Convert between text and alphanumeric code
+            function decode(address) {
+                var text = "";
+                for (var i = 0; i < address.length; i += 2) {
+                    var idx = addressCharset.indexOf(address[i]) * addressCharset.length + addressCharset.indexOf(address[i + 1]);
+                    idx = idx % words.length;
+                    if (idx == 0) continue;
+                    text += words[idx] + " ";
+                }
+                return text;
+            }
+            function encode(text) {
+                var address = "";
+                text = text.split(" ");
+                if (text.length > addressLength / 2) {
+                    outputBox.value = "pakala: poki toki li jo e nimi mute!";
+                    return;
+                }
+                for (var i = 0; i < text.length; i++) {
+                    if (text[i] == "ali") text[i] = "ale"; // Minor fix
+                    var idx = words.indexOf(text[i]);
+                    if (idx == -1) {
+                        outputBox.value = "pakala: '" + text[i] + "' li nimi ala!";
+                        return;
+                    }
+                    idx += Math.floor(Math.random() * (variants + 1)) * words.length; // Added 1 so we still map the excess numbers to a word; if an address is greater than 0xff, we subtract wordlist.length (see encode fn)
+                    if (idx > max2Digit) idx -= words.length;
+
+                    address += addressCharset[Math.floor(idx / addressCharset.length)] + addressCharset[idx % addressCharset.length];
+                }
+                return address;
+            }
+
+            // Shuffle the alphanumeric code to get the address
+            // Uses non-cryptographically secure substitution-permutation
+            const rounds = 6;
+            var seed = 45;
+            function seededRandInt(min, max) {
+                seed = (1664525 * seed + 1013904223) % 4294967296
+                return Math.floor(seed / 4294967296 * (max - min) + min);
+            }
+            function shuffle(a) {
+                for (var i = a.length - 1; i > 0; i--) {
+                    var j = seededRandInt(0, i + 1);
+                    var x = a[i];
+                    a[i] = a[j];
+                    a[j] = x;
+                }
+                return a;
+            }
+            const sbox = new Array(addressCharset.length).fill().map(() => shuffle([...addressCharset]));
+            const pbox = shuffle(new Array(addressLength).fill().map((e, i) => i));
+
+            function encrypt(str) { // str MUST be of length addressLength
+                for (var rnd = 0; rnd < rounds; rnd++) {
+                    // Substitution -- Rreceding character affects how this character will be substituted; so if 1 char at the start changes, most of the string does too
+                    var sbst = "", lastChar = 0;
+                    for (var i = 0; i < addressLength; i++) {
+                        var char = sbox[lastChar][addressCharset.indexOf(str[i])];
+                        sbst += char;
+                        lastChar = addressCharset.indexOf(char);
+                    }
+                    str = sbst;
+                    // Permutation
+                    var perm = new Array(addressLength);
+                    for (var i = 0; i < addressLength; i++) {
+                        perm[pbox[i]] = str[i];
+                    }
+                    str = perm.join("");
+                }
+                return str;
+            }
+            function decrypt(str) { // str MUST be of length addressLength
+                for (var rnd = 0; rnd < rounds; rnd++) {
+                    // Unpermute
+                    var perm = new Array(addressLength);
+                    for (var i = 0; i < addressLength; i++) {
+                        perm[pbox.indexOf(i)] = str[i];
+                    }
+                    str = perm.join("");
+                    // Unsubstitute
+                    var sbst = "", lastChar = 0;
+                    for (var i = 0; i < addressLength; i++) {
+                        var char = str[i];
+                        sbst += addressCharset[sbox[lastChar].indexOf(char)];
+                        lastChar = addressCharset.indexOf(char);
+                    }
+                    str = sbst;
+                }
+                return str;
+            }
+        </script>
+    </body>
+</html>
